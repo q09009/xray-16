@@ -21,7 +21,8 @@ ENGINE_API CLoadScreenRenderer load_screen_renderer;
 ENGINE_API bool g_bRendering = false;
 
 ENGINE_API bool g_bBenchmark = false;
-string512 g_sBenchmarkName;
+ENGINE_API string512 g_sBenchmarkName;
+ENGINE_API string512 g_sBenchmarkDemoName;
 
 int ps_fps_limit = 501;
 int ps_fps_limit_in_menu = 60;
@@ -90,6 +91,16 @@ void CRenderDevice::RenderEnd(void)
                 const Uint32 flags = SDL_GetWindowFlags(m_sdlWnd);
                 if ((flags & SDL_WINDOW_INPUT_FOCUS) == 0)
                     Pause(true, true, true, "application start");
+            }
+
+            // benchmark automation: level finished loading (this precache cycle just ended) -
+            // auto-start the configured demo so no manual "demo_play" console input is needed
+            if (g_bBenchmark && xr_strlen(g_sBenchmarkDemoName) && g_pGameLevel && g_loading_events.empty())
+            {
+                string_path cmd;
+                xr_sprintf(cmd, sizeof(cmd), "demo_play %s", g_sBenchmarkDemoName);
+                Console->Execute(cmd);
+                g_sBenchmarkDemoName[0] = 0;
             }
         }
     }

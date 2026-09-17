@@ -287,6 +287,32 @@ CApplication::CApplication(pcstr commandLine, GameModule* game, const std::array
     if (loadArgs)
         Console->Execute(loadArgs + 1);
 
+    // ...command line for benchmarking: -benchmark_demo <demo_name> [-benchmark [result_name]]
+    pcstr benchmarkDemoArg = "-benchmark_demo ";
+    pcstr benchmarkDemoPos = strstr(Core.Params, benchmarkDemoArg);
+    if (benchmarkDemoPos)
+    {
+        sscanf(benchmarkDemoPos + xr_strlen(benchmarkDemoArg), "%[^ ] ", g_sBenchmarkDemoName);
+        Msg("! Benchmark demo \"%s\" will auto-play once the level finishes loading", g_sBenchmarkDemoName);
+    }
+
+    pcstr benchmarkArg = "-benchmark";
+    pcstr benchmarkPos = strstr(Core.Params, benchmarkArg);
+    while (benchmarkPos && benchmarkPos[xr_strlen(benchmarkArg)] == '_')
+        benchmarkPos = strstr(benchmarkPos + 1, benchmarkArg); // don't mistake -benchmark_demo for -benchmark
+    if (benchmarkPos)
+    {
+        g_bBenchmark = true;
+        pcstr nameArg = benchmarkPos + xr_strlen(benchmarkArg);
+        if (*nameArg == ' ')
+            sscanf(nameArg + 1, "%[^ ] ", g_sBenchmarkName);
+        Msg("! Benchmark mode is on. Results will be saved to \"%s.result\"",
+            xr_strlen(g_sBenchmarkName) ? g_sBenchmarkName : "benchmark");
+
+        // don't block on the "press any key to play" prompt when running unattended
+        Console->Execute("keypress_on_start 0");
+    }
+
     // Initialize APP
     const auto& createLightAnim = TaskScheduler->AddTask([]
     {
